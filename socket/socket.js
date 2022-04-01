@@ -93,14 +93,26 @@ export default function socketConnection(server) {
     socket.on("admin-calling", (data) => {
       socket.to(data.conversationId).emit("admin-calling", data);
     });
-    socket.on("users_peerId", (data) => {
-      socket.to(data.conversationId).emit("users_peerId", data);
+    socket.on("admin_getting_peerId", (data) => {
+      socket.to(data.conversationId).emit("admin_getting_peerId", data);
     });
     socket.on("admin-stopped-call", (data) => {
       socket.to(data.conversationId).emit("admin-stopped-call", data);
     });
-    socket.on("others_peerId", (data) => {
-      socket.to(data.conversationId).emit("others_peerId", data);
+    socket.on("peerId_to_invitee", (data) => {
+      socket.to(data.conversationId).emit("peerId_to_invitee", data);
+    });
+    socket.on("user_left_stream", (data) => {
+      socket.to(data.conversationId).emit("user_left_stream", data);
+    });
+    socket.on("mute_user_by_admin", (data) => {
+      socket.to(data.conversationId).emit("mute_user_by_admin", data);
+    });
+    socket.on("unmute_user_by_admin", (data) => {
+      socket.to(data.conversationId).emit("unmute_user_by_admin", data);
+    });
+    socket.on("remove_user_by_admin", (data) => {
+      socket.to(data.conversationId).emit("remove_user_by_admin", data);
     });
   });
 }
