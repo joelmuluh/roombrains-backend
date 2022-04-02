@@ -87,6 +87,9 @@ export default function socketConnection(server) {
     socket.on("invitation-accepted", (data) => {
       socket.to(data.conversationId).emit("invitation-accepted", data);
     });
+    socket.on("invitation_declined", (data) => {
+      socket.to(data.conversationId).emit("invitation_declined", data);
+    });
     socket.on("stream-call", (data) => {
       socket.to(data.conversationId).emit("stream-call", data);
     });
