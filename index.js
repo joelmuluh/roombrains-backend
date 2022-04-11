@@ -23,7 +23,7 @@ app.use("/auth", authRoute);
 app.use("/message", messageRouter);
 
 app.get("/", (req, res) => {
-  res.send("Welcome");
+  res.send("Welcome to Roombrains");
 });
 
 socketConnection(server);
