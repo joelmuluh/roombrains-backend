@@ -51,7 +51,18 @@ export default function socketConnection(server) {
     });
 
     socket.on("block-me", (data) => {
-      socket.leave(data.conversationId);
+      const user = getUser(socket.id);
+      if (user) {
+        const conversationId = user.conversationId;
+
+        const onliners = removeUser(socket.id);
+        const myusers = onliners.filter(
+          (x) => x.conversationId === conversationId
+        );
+
+        io.to(conversationId).emit("get-participants", myusers);
+        socket.leave(data.conversationId);
+      }
     });
     socket.on("block-user", (data) => {
       socket.to(data.conversationId).emit("block-user", data);
@@ -81,6 +92,8 @@ export default function socketConnection(server) {
     });
 
     //Admin of the group has sent video streaming invitation to a user
+
+    //VIDEO STREAMING EVENTS
     socket.on("stream-invitation", (data) => {
       socket.to(data.conversationId).emit("invitation-from-admin", data);
     });
@@ -116,6 +129,50 @@ export default function socketConnection(server) {
     });
     socket.on("remove_user_by_admin", (data) => {
       socket.to(data.conversationId).emit("remove_user_by_admin", data);
+    });
+
+    //SMART BOARD EVENTS
+
+    socket.on("canvasData", (data) => {
+      socket.to(data.conversationId).emit("canvasData", data);
+    });
+
+    socket.on("begin-new-mouse-path", (data) => {
+      socket.to(data.conversationId).emit("begin-new-mouse-path", data);
+    });
+
+    socket.on("clear-canvas", (data) => {
+      socket.to(data.conversationId).emit("clear-canvas", data);
+    });
+    socket.on("Get_canvas_image_data", (data) => {
+      console.log("Got sent event");
+      socket.to(data.conversationId).emit("Get_canvas_image_data", data);
+    });
+    socket.on("ask_canvas_image_data", (data) => {
+      socket.to(data.conversationId).emit("ask_canvas_image_data", data);
+    });
+    socket.on("give_access_to_whiteboard", (data) => {
+      socket.to(data.conversationId).emit("give_access_to_whiteboard", data);
+    });
+    socket.on("restrict_access_to_whiteboard", (data) => {
+      socket
+        .to(data.conversationId)
+        .emit("restrict_access_to_whiteboard", data);
+    });
+
+    //Code Editor Events
+
+    socket.on("give_access_to_editor", (data) => {
+      socket.to(data.conversationId).emit("give_access_to_editor", data);
+    });
+    socket.on("restrict_access_to_editor", (data) => {
+      socket.to(data.conversationId).emit("restrict_access_to_editor", data);
+    });
+    socket.on("code_from_editor", (data) => {
+      socket.to(data.conversationId).emit("code_from_editor", data);
+    });
+    socket.on("change_programming_language", (data) => {
+      socket.to(data.conversationId).emit("change_programming_language", data);
     });
   });
 }

@@ -5,7 +5,6 @@ import RoomMessage from "../models/RoomMessage.js";
 import Room from "../models/Rooms.js";
 import Users from "../models/Users.js";
 import { authRequest } from "../utils/tokenFunctions.js";
-
 export const router = Router();
 //Get all Public rooms
 router.get("/all", async (req, res) => {
@@ -220,7 +219,11 @@ router.get("/:meetingId", authRequest, async (req, res) => {
 
     if (room) {
       const creator = await Users.findOne({ _id: room.creator });
-      const roomData = { ...room._doc, creatorName: creator.username };
+      const roomData = {
+        ...room._doc,
+        creatorName: creator.username,
+        creatorImage: creator.image,
+      };
       res.json({ roomData, exists: true });
     } else {
       res.json({ exists: false });
