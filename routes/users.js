@@ -114,13 +114,19 @@ router.put("/password", authRequest, async (req, res) => {
 router.put("/imageupload", authRequest, async (req, res) => {
   const { _id } = req.user;
   const cloudinary = v2;
+  // cloudinary.config({
+  //   cloud_name: process.env.CLOUDINARY_NAME,
+  //   api_key: process.env.CLOUDINARY_API_KEY,
+  //   api_secret: process.env.CLOUDINARY_API_SECRET,
+  // });
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: "dp94yctbc",
+    api_key: "416364368838594",
+    api_secret: "KpKt7ESEphCjQHMZPGW7lloW5t8",
   });
   try {
     const uploadResponse = await cloudinary.uploader.upload(req.body.image);
+    console.log(uploadResponse);
 
     const data = await Users.findOneAndUpdate(
       { _id },
@@ -157,6 +163,7 @@ router.put("/imageupload", authRequest, async (req, res) => {
 
     res.json({ _id, username, email, image, token });
   } catch (error) {
+    console.log(error.message);
     res.json({ error: error.message });
   }
 });
