@@ -24,7 +24,7 @@ app.use("/auth", authRoute);
 app.use("/message", messageRouter);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Roombrains");
+  res.json({ message: "Welcome to Roombrains" });
 });
 socketConnection(server);
 const peerServer = ExpressPeerServer(server, {
