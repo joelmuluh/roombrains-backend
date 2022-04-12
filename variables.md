@@ -3,10 +3,3 @@ CLOUDINARY_NAME
 CLOUDINARY_API_KEY
 CLOUDINARY_API_SECRET
 MONGO_URI
-
-SECRET_KEY=iooig123444sa1f999e87rfgopksklfeo;
-CLOUDINARY_NAME=dp94yctbc;
-CLOUDINARY_API_KEY=416364368838594;
-CLOUDINARY_API_SECRET=KpKt7ESEphCjQHMZPGW7lloW5t8;
-
-MONGO_URI=mongodb+srv://MuluhJoel:MongoRoombrains@roombrains.vzm7h.mongodb.net/roombrains_database?retryWrites=true&w=majority

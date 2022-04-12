@@ -26,15 +26,14 @@ app.use("/message", messageRouter);
 app.get("/", (req, res) => {
   res.send("Welcome to Roombrains");
 });
-
 socketConnection(server);
-connectDB();
-
 const peerServer = ExpressPeerServer(server, {
   debug: true,
   path: "/",
   generateClientId: v4,
 });
 app.use("/peer", peerServer);
+
+connectDB();
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log("Server running"));

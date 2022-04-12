@@ -8,8 +8,13 @@ const getUser = (socketId) => {
 
 const addUser = (socketId, conversationId, _id, username, peerId, image) => {
   const userExists = users.some((user) => user._id === _id);
-  if (!userExists) {
-    users.push({ socketId, conversationId, _id, username, peerId, image });
+  if (!userExists || (userExists && userExists.peerId === null)) {
+    const validUsers = users.filter((user) => user.socketId !== socketId);
+    // users.push({ socketId, conversationId, _id, username, peerId, image });
+    users = [
+      ...validUsers,
+      { socketId, conversationId, _id, username, peerId, image },
+    ];
   }
 };
 const removeUser = (socketId) => {
@@ -29,6 +34,15 @@ export default function socketConnection(server) {
       const { conversationId, _id, username, peerId, image } = data;
       addUser(socket.id, conversationId, _id, username, peerId, image);
       socket.to(data.conversationId).emit("new-connection", data);
+      const myusers = users.filter(
+        (user) => user.conversationId === conversationId
+      );
+      io.to(conversationId).emit("get-participants", myusers);
+    });
+
+    socket.on("send_participants", (data) => {
+      const { conversationId, _id, username, image } = data;
+      addUser(socket.id, conversationId, _id, username, null, image);
       const myusers = users.filter(
         (user) => user.conversationId === conversationId
       );
@@ -74,24 +88,22 @@ export default function socketConnection(server) {
       if (!socket.rooms.has(conversationId)) {
         socket.join(conversationId);
         socket.to(conversationId).emit("new-user", userId);
-        socket.on(
-          "chatMessage",
-          ({ senderId, conversationId, message, senderImage, senderName }) => {
-            const data = {
-              senderId,
-              conversationId,
-              message,
-              senderImage,
-              senderName,
-            };
-
-            socket.to(conversationId).emit("chatMessage", data);
-          }
-        );
       }
     });
+    socket.on(
+      "chatMessage",
+      ({ senderId, conversationId, message, senderImage, senderName }) => {
+        const data = {
+          senderId,
+          conversationId,
+          message,
+          senderImage,
+          senderName,
+        };
 
-    //Admin of the group has sent video streaming invitation to a user
+        socket.to(conversationId).emit("chatMessage", data);
+      }
+    );
 
     //VIDEO STREAMING EVENTS
     socket.on("stream-invitation", (data) => {
