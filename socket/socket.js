@@ -2,24 +2,25 @@ import { Server } from "socket.io";
 
 let users = [];
 
-const getUser = (socketId) => {
-  return users.find((user) => user.socketId === socketId);
-};
+const addUser = (socketId, conversationId, _id, username, image) => {
+  const userExists = users.some(
+    (user) => user._id === _id && user.conversationId === conversationId
+  );
+  if (!userExists) {
+    const validUsers = users.filter(
+      (user) => user._id !== _id && user.conversationId === conversationId
+    );
 
-const addUser = (socketId, conversationId, _id, username, peerId, image) => {
-  const userExists = users.some((user) => user._id === _id);
-  if (!userExists || (userExists && userExists.peerId === null)) {
-    const validUsers = users.filter((user) => user.socketId !== socketId);
-    // users.push({ socketId, conversationId, _id, username, peerId, image });
-    users = [
-      ...validUsers,
-      { socketId, conversationId, _id, username, peerId, image },
-    ];
+    users = [...validUsers, { socketId, conversationId, _id, username, image }];
   }
 };
 const removeUser = (socketId) => {
   users = users.filter((user) => user.socketId !== socketId);
   return users;
+};
+
+const getUser = (socketId) => {
+  return users.filter((user) => user.socketId === socketId);
 };
 
 export default function socketConnection(server) {
@@ -31,8 +32,8 @@ export default function socketConnection(server) {
   io.on("connection", (socket) => {
     //when user connects and needs to be added to the list on online users
     socket.on("new-connection", (data) => {
-      const { conversationId, _id, username, peerId, image } = data;
-      addUser(socket.id, conversationId, _id, username, peerId, image);
+      const { conversationId, _id, username, image } = data;
+      addUser(socket.id, conversationId, _id, username, image);
       socket.to(data.conversationId).emit("new-connection", data);
       const myusers = users.filter(
         (user) => user.conversationId === conversationId
@@ -52,37 +53,54 @@ export default function socketConnection(server) {
     //Remove the user from online list after a disconnection is noticed
     socket.on("disconnect", () => {
       const user = getUser(socket.id);
-      if (user) {
-        const conversationId = user.conversationId;
-
+      if (user && user.length > 0) {
+        const conversations = user.map((x) => x.conversationId);
         const onliners = removeUser(socket.id);
-        const myusers = onliners.filter(
-          (x) => x.conversationId === conversationId
-        );
-        socket.to(conversationId).emit("user-disconnected", user);
-        io.to(conversationId).emit("get-participants", myusers);
+        conversations.forEach((conversationId) => {
+          const myOnliners = onliners.filter(
+            (x) => x.conversationId === conversationId
+          );
+          socket.to(conversationId).emit("user-disconnected", user[0]);
+          socket.to(conversationId).emit("get-participants", myOnliners);
+        });
+      }
+    });
+
+    socket.on("user_logged_out", () => {
+      const user = getUser(socket.id);
+      if (user && user.length > 0) {
+        const conversations = user.map((x) => x.conversationId);
+        const onliners = removeUser(socket.id);
+        conversations.forEach((conversationId) => {
+          const myOnliners = onliners.filter(
+            (x) => x.conversationId === conversationId
+          );
+          socket.to(conversationId).emit("user-disconnected", user[0]);
+          socket.to(conversationId).emit("get-participants", myOnliners);
+        });
       }
     });
 
     socket.on("block-me", (data) => {
       const user = getUser(socket.id);
-      if (user) {
-        const conversationId = user.conversationId;
-
-        const onliners = removeUser(socket.id);
-        const myusers = onliners.filter(
-          (x) => x.conversationId === conversationId
+      if (user && user.length > 0) {
+        users = users.filter(
+          (x) =>
+            x.conversationId !== user.conversationId && x.socketId !== socket.id
         );
+        const myusers = users.filter(
+          (x) => x.conversationId === data.conversationId
+        );
+        console.log(users);
+        console.log(myusers);
 
-        io.to(conversationId).emit("get-participants", myusers);
+        io.to(data.conversationId).emit("get-participants", myusers);
         socket.leave(data.conversationId);
       }
     });
     socket.on("block-user", (data) => {
       socket.to(data.conversationId).emit("block-user", data);
     });
-
-    //Since we are handling both room and private chat, we are going to use the concept of rooms for both chat kinds. So a private chat is simply a room of two people
 
     socket.on("join-conversation", ({ conversationId, userId, username }) => {
       if (!socket.rooms.has(conversationId)) {
@@ -107,7 +125,16 @@ export default function socketConnection(server) {
 
     //VIDEO STREAMING EVENTS
     socket.on("stream-invitation", (data) => {
-      socket.to(data.conversationId).emit("invitation-from-admin", data);
+      const invitee = users.find(
+        (user) =>
+          user.conversationId === data.conversationId &&
+          user._id === data.userId
+      );
+      if (invitee) {
+        socket.to(data.conversationId).emit("invitation-from-admin", data);
+      } else {
+        io.to(data.conversationId).emit("invitee_not_available", data);
+      }
     });
     socket.on("invitation-accepted", (data) => {
       socket.to(data.conversationId).emit("invitation-accepted", data);
@@ -156,13 +183,6 @@ export default function socketConnection(server) {
     socket.on("clear-canvas", (data) => {
       socket.to(data.conversationId).emit("clear-canvas", data);
     });
-    socket.on("Get_canvas_image_data", (data) => {
-      console.log("Got sent event");
-      socket.to(data.conversationId).emit("Get_canvas_image_data", data);
-    });
-    socket.on("ask_canvas_image_data", (data) => {
-      socket.to(data.conversationId).emit("ask_canvas_image_data", data);
-    });
     socket.on("give_access_to_whiteboard", (data) => {
       socket.to(data.conversationId).emit("give_access_to_whiteboard", data);
     });
@@ -185,6 +205,9 @@ export default function socketConnection(server) {
     });
     socket.on("change_programming_language", (data) => {
       socket.to(data.conversationId).emit("change_programming_language", data);
+    });
+    socket.on("code_output", (data) => {
+      socket.to(data.conversationId).emit("code_output", data);
     });
   });
 }

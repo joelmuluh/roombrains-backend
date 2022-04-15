@@ -22,6 +22,16 @@ router.get("/", authRequest, async (req, res) => {
   }
 });
 
+router.get("/find/:userId", authRequest, async (req, res) => {
+  try {
+    const users = await Users.findOne({ _id: req.params.userId });
+    const { password, ...rest } = users._doc;
+    res.json(rest);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
 //Update username
 router.put("/username", authRequest, async (req, res) => {
   const { _id } = req.user;
@@ -120,13 +130,12 @@ router.put("/imageupload", authRequest, async (req, res) => {
   //   api_secret: process.env.CLOUDINARY_API_SECRET,
   // });
   cloudinary.config({
-    cloud_name: "dp94yctbc",
-    api_key: "416364368838594",
-    api_secret: "KpKt7ESEphCjQHMZPGW7lloW5t8",
+    cloud_name: "dlttvydqt",
+    api_key: "638586148977229",
+    api_secret: "AbIv8-QQMw8PObU0912FkE4vpHw",
   });
   try {
     const uploadResponse = await cloudinary.uploader.upload(req.body.image);
-    console.log(uploadResponse);
 
     const data = await Users.findOneAndUpdate(
       { _id },

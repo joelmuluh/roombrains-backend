@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Router } from "express";
 import { v4 } from "uuid";
 import Conversations from "../models/Conversation.js";
@@ -98,68 +99,6 @@ router.get("/myrooms", authRequest, async (req, res) => {
     }
   } catch (error) {
     console.log(error.message);
-    res.json({ error: error.message });
-  }
-});
-
-//Join a particular Room
-router.put("/join/:roomId", authRequest, async (req, res) => {
-  const roomId = req.params.roomId;
-  const { _id } = req.user;
-  try {
-    const room = await Room.findById(roomId);
-    const conversation = await Conversations.findById(room.conversationId);
-    const members = conversation.members;
-    if (members.length + 1 > room.limit) {
-      res.json({ reachedLimit: true });
-    } else {
-      if (!conversation.members.includes(_id)) {
-        await Conversations.findByIdAndUpdate(room.conversationId, {
-          $push: {
-            members: _id,
-          },
-        });
-        const newConversation = await Conversations.findById(
-          room.conversationId
-        );
-        res.json({
-          reachedLimit: false,
-          room: { ...room._doc, room: newConversation.members },
-        });
-      } else {
-        const newConversation = await Conversations.findById(
-          room.conversationId
-        );
-        res.json({
-          exists: true,
-          room: { ...room._doc, members: newConversation.members },
-        });
-      }
-    }
-  } catch (error) {
-    res.json({ error: error.message });
-  }
-});
-
-//Get all the members of a particular Room
-router.get("/:roomId/members", authRequest, async (req, res) => {
-  const roomId = req.params.roomId;
-  try {
-    const room = await Room.findById(roomId);
-    const conversation = await Conversations.findById(room.conversationId);
-    const members = conversation.members;
-    const memberDetails = await Promise.all(
-      members.map(async (member) => {
-        return Users.findById(member);
-      })
-    );
-    const removedPassword = memberDetails.map((memberDetail) => {
-      const { password, ...passwordless } = memberDetail._doc;
-      return passwordless;
-    });
-
-    res.json(removedPassword);
-  } catch (error) {
     res.json({ error: error.message });
   }
 });
@@ -328,6 +267,31 @@ router.delete("/unblock/:roomId/:memberId", authRequest, async (req, res) => {
       res.json({ success: false });
     }
   } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+router.post("/code/compile", async (req, res) => {
+  const { code, language, input } = req.body;
+  var data = JSON.stringify({
+    code,
+    language,
+    input,
+  });
+
+  try {
+    const response = await axios.post(
+      "https://codexweb.netlify.app/.netlify/functions/enforceCode",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.log(error.message);
     res.json({ error: error.message });
   }
 });
