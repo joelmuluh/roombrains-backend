@@ -98,6 +98,9 @@ export default function socketConnection(server) {
     socket.on("block-user", (data) => {
       socket.to(data.conversationId).emit("block-user", data);
     });
+    socket.on("admin_deleted_this_room", (data) => {
+      socket.to(data.conversationId).emit("admin_deleted_this_room", data);
+    });
     socket.on("remove_onliner", (data) => {
       const user = getUser(socket.id);
       if (user && user.length > 0) {
