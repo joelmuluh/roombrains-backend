@@ -1,7 +1,6 @@
 import { Server } from "socket.io";
 
 let users = [];
-
 const addUser = (socketId, conversationId, _id, username, image) => {
   const userExists = users.some(
     (user) => user._id === _id && user.conversationId === conversationId
@@ -91,8 +90,6 @@ export default function socketConnection(server) {
         const myusers = users.filter(
           (x) => x.conversationId === data.conversationId
         );
-        console.log(users);
-        console.log(myusers);
 
         io.to(data.conversationId).emit("get-participants", myusers);
         socket.leave(data.conversationId);
@@ -100,6 +97,21 @@ export default function socketConnection(server) {
     });
     socket.on("block-user", (data) => {
       socket.to(data.conversationId).emit("block-user", data);
+    });
+    socket.on("remove_onliner", (data) => {
+      const user = getUser(socket.id);
+      if (user && user.length > 0) {
+        users = users.filter(
+          (x) =>
+            x.conversationId !== user.conversationId && x.socketId !== socket.id
+        );
+        const myusers = users.filter(
+          (x) => x.conversationId === data.conversationId
+        );
+
+        io.to(data.conversationId).emit("get-participants", myusers);
+        socket.leave(data.conversationId);
+      }
     });
 
     socket.on("join-conversation", ({ conversationId, userId, username }) => {
